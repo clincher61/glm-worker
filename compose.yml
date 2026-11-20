@@ -1,0 +1,39 @@
+services:
+  glm-worker:
+    build: .
+    image: glm-worker:latest
+    container_name: glm-worker
+    restart: unless-stopped
+    environment:
+      # --- paperless-ngx ---
+      PAPERLESS_URL: "http://paperless-ngx:8000"    # must be a hostname paperless accepts (see README)
+      PAPERLESS_TOKEN: "PASTE_YOUR_TOKEN_HERE"      # paperless-ngx > My Profile > API token
+      # --- tags (the worker creates any that are missing) ---
+      TRIGGER_TAG: "glm-ocr"
+      NEXT_TAG: "glm-ocr-done"
+      FAIL_TAG: "glm-ocr-failed"
+      # --- OCR model served by Ollama ---
+      OCR_HOST: "ollama"
+      OCR_PORT: "11434"
+      OCR_MODEL: "glm-ocr-16k"                      # see README: create with a 16384 context
+      LAYOUT_DEVICE: "cpu"
+      # --- behaviour ---
+      POLL_SECONDS: "60"
+      MAX_ATTEMPTS: "3"
+      MIN_CHARS_PER_PAGE: "40"
+      CHUNK_PAGES: "25"                             # pages per layout run (0 = whole file at once)
+      CHUNK_TIMEOUT_SECONDS: "1800"                 # time limit per chunk
+      HEARTBEAT_SECONDS: "120"                      # "still working" line while a chunk runs
+      VERBOSE: "0"                                  # 1 = log every idle poll
+      # TZ: "America/Los_Angeles"                   # log timestamps default to UTC
+      # --- persistence (everything lives under /data) ---
+      STATE_FILE: "/data/worker_state.json"
+      BACKUP_DIR: "/data/content_backups"
+      LOG_FILE: "/data/worker.log"
+    volumes:
+      - ./data:/data
+    # networks:                                     # join the network your paperless/ollama containers use
+    #   - your-network
+# networks:
+#   your-network:
+#     external: true
